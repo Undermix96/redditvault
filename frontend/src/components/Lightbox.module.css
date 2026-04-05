@@ -1,0 +1,246 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  cursor: none;
+}
+
+.container.showControls {
+  cursor: default;
+}
+
+/* Top Bar */
+.topBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.showControls .topBar {
+  opacity: 1;
+}
+
+.topLeft {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.subredditTag {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  background: var(--accent-dim);
+  padding: 3px 9px;
+  border-radius: 99px;
+  border: 1px solid var(--accent-glow);
+}
+
+.slash {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.categoryTag {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.titleTop {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.counter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.iconBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-size: 15px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.iconBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+}
+
+/* Media Area */
+.mediaArea {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  animation: mediaIn 0.2s ease;
+}
+
+@keyframes mediaIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Nav buttons */
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.4);
+  border-radius: var(--radius);
+  transition: color 0.15s, background 0.15s, opacity 0.3s;
+  opacity: 0;
+}
+
+.showControls .navBtn {
+  opacity: 1;
+}
+
+.navBtn:hover {
+  color: #fff;
+  background: rgba(0,0,0,0.7);
+}
+
+.navPrev { left: 12px; }
+.navNext { right: 12px; }
+
+/* Bottom Bar */
+.bottomBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.showControls .bottomBar {
+  opacity: 1;
+}
+
+.bottomLeft { min-width: 80px; }
+
+.muteBtn {
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+}
+
+.dotNav {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 300px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.dot:hover {
+  background: rgba(255,255,255,0.5);
+}
+
+.dotActive {
+  background: var(--accent);
+  transform: scale(1.3);
+}
+
+.openBtn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.openBtn:hover {
+  color: var(--text);
+  border-color: var(--border-bright);
+}
+
+/* Fullscreen */
+:fullscreen .container { background: #000; }

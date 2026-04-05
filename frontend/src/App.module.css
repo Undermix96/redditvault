@@ -1,0 +1,31 @@
+.layout {
+  display: grid;
+  grid-template-rows: var(--header-h) 1fr;
+  grid-template-columns: 0 1fr;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  min-height: 100vh;
+  transition: grid-template-columns 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.layout.sidebarVisible {
+  grid-template-columns: var(--sidebar-w) 1fr;
+}
+
+.main {
+  grid-area: main;
+  overflow-x: hidden;
+  padding: 24px 28px 80px;
+  min-height: calc(100vh - var(--header-h));
+}
+
+@media (max-width: 768px) {
+  .layout,
+  .layout.sidebarVisible {
+    grid-template-columns: 0 1fr;
+  }
+  .main {
+    padding: 16px 12px 60px;
+  }
+}

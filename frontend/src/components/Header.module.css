@@ -1,0 +1,111 @@
+.header {
+  grid-area: header;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 20px;
+  height: var(--header-h);
+  background: rgba(10,10,11,0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.menuBtn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-radius: var(--radius);
+  transition: background 0.15s;
+}
+.menuBtn:hover { background: var(--surface2); }
+.menuBtn span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text-dim);
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+.menuBtn:hover span { background: var(--text); }
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoIcon {
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.subredditBadge {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-glow);
+  border-radius: 99px;
+  color: var(--accent2);
+}
+
+.rSlash {
+  color: var(--accent);
+  margin-right: 1px;
+}
+
+.typeNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 3px;
+}
+
+.typeBtn {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 5px 13px;
+  border-radius: 99px;
+  color: var(--text-dim);
+  transition: color 0.15s, background 0.15s;
+}
+.typeBtn:hover { color: var(--text); }
+.typeBtn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .subredditBadge { display: none; }
+  .typeBtn { padding: 5px 9px; }
+}
