@@ -186,5 +186,5 @@ fastify.post('/api/refresh', async () => {
 
 const PORT = process.env.PORT || 3001
 await fastify.listen({ port: PORT, host: '0.0.0.0' })
-console.log(`MediaVault API running on http://0.0.0.0:${PORT}`)
+console.log(`RedditVault API running on http://0.0.0.0:${PORT}`)
 console.log(`Media root: ${MEDIA_ROOT}`)

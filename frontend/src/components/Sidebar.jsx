@@ -45,7 +45,7 @@ export default function Sidebar() {
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.footerText}>MediaVault · LAN</span>
+        <span className={styles.footerText}>RedditVault · LAN</span>
       </div>
     </aside>
   )

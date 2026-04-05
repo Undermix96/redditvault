@@ -18,7 +18,7 @@ export default function Header() {
         </button>
         <div className={styles.logo}>
           <span className={styles.logoIcon}>▲</span>
-          <span className={styles.logoText}>MediaVault</span>
+          <span className={styles.logoText}>RedditVault</span>
         </div>
         {activeSubreddit !== 'all' && (
           <div className={styles.subredditBadge}>

@@ -1,4 +1,4 @@
-# MediaVault
+# RedditVault
 
 Bacheca media in stile Reddit per LAN. Visualizza immagini, video e GIF organizzati in "subreddit" leggendo dinamicamente una directory.
 
@@ -46,21 +46,21 @@ media/
 docker compose -f docker-compose.build.yml build
 ```
 
-Produce le immagini `mediavault-backend:latest` e `mediavault-frontend:latest`.
+Produce le immagini `undermix/redditvault-backend:latest` e `undermix/redditvault-frontend:latest`.
 
 Per esportarle e trasferirle sulla macchina LAN:
 
 ```bash
-docker save mediavault-backend:latest mediavault-frontend:latest | gzip > mediavault.tar.gz
+docker save undermix/redditvault-backend:latest undermix/redditvault-frontend:latest | gzip > redditvault.tar.gz
 # poi trasferisci il file, es. con scp:
-scp mediavault.tar.gz user@192.168.1.x:/destinazione/
+scp redditvault.tar.gz user@192.168.1.x:/destinazione/
 ```
 
 ### Deploy (macchina LAN)
 
 ```bash
 # Carica le immagini (solo se trasferite come tar)
-docker load < mediavault.tar.gz
+docker load < redditvault.tar.gz
 
 # Configura l'ambiente
 cp .env.example .env
