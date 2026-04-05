@@ -7,7 +7,6 @@ export default function Lightbox() {
   const videoRef = useRef(null)
   const containerRef = useRef(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [videoMuted, setVideoMuted] = useState(false)
   const [showControls, setShowControls] = useState(true)
   const hideTimer = useRef(null)
 
@@ -15,32 +14,33 @@ export default function Lightbox() {
   const hasPrev = lightboxIndex > 0
   const hasNext = lightboxIndex < lightboxList.length - 1
 
+  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
 
+  // Autoplay when post changes
   useEffect(() => {
     if (videoRef.current) {
+      videoRef.current.load()
       videoRef.current.play().catch(() => {})
     }
   }, [lightboxPost])
 
+  // Fullscreen change listener
   useEffect(() => {
-    const handler = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', handler)
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
 
+  // Auto-hide UI overlays after 3s of no mouse movement
   const resetHideTimer = () => {
     setShowControls(true)
     clearTimeout(hideTimer.current)
     hideTimer.current = setTimeout(() => setShowControls(false), 3000)
   }
-
-  const handleMouseMove = () => resetHideTimer()
 
   useEffect(() => {
     resetHideTimer()
@@ -65,7 +65,7 @@ export default function Lightbox() {
     <div
       className={styles.backdrop}
       onClick={handleBackdropClick}
-      onMouseMove={handleMouseMove}
+      onMouseMove={resetHideTimer}
     >
       <div
         ref={containerRef}
@@ -90,7 +90,7 @@ export default function Lightbox() {
           </div>
         </div>
 
-        {/* Media */}
+        {/* Media area */}
         <div className={styles.mediaArea}>
           {isVideo ? (
             <video
@@ -101,8 +101,7 @@ export default function Lightbox() {
               autoPlay
               loop
               playsInline
-              muted={videoMuted}
-              controls={false}
+              controls
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
@@ -115,40 +114,26 @@ export default function Lightbox() {
             />
           )}
 
-          {/* Nav arrows */}
+          {/* Prev / Next arrows — shown only for images (video has native controls) */}
           {hasPrev && (
             <button
               className={`${styles.navBtn} ${styles.navPrev}`}
               onClick={(e) => { e.stopPropagation(); lightboxPrev() }}
               aria-label="Precedente"
-            >
-              ‹
-            </button>
+            >‹</button>
           )}
           {hasNext && (
             <button
               className={`${styles.navBtn} ${styles.navNext}`}
               onClick={(e) => { e.stopPropagation(); lightboxNext() }}
               aria-label="Successivo"
-            >
-              ›
-            </button>
+            >›</button>
           )}
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bottom bar */}
         <div className={styles.bottomBar}>
-          <div className={styles.bottomLeft}>
-            {isVideo && (
-              <button
-                className={`${styles.iconBtn} ${styles.muteBtn}`}
-                onClick={() => setVideoMuted(m => !m)}
-                title={videoMuted ? 'Attiva audio' : 'Silenzia'}
-              >
-                {videoMuted ? '🔇' : '🔊'}
-              </button>
-            )}
-          </div>
+          <div className={styles.bottomLeft} />
           <div className={styles.dotNav}>
             {lightboxList.length <= 30 && lightboxList.map((_, i) => (
               <button

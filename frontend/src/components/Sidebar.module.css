@@ -3,8 +3,9 @@
   position: sticky;
   top: var(--header-h);
   height: calc(100vh - var(--header-h));
-  overflow-y: auto;
+  /* overflow-y active only when open; overflow-x always hidden */
   overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -12,6 +13,8 @@
   width: 0;
   transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
   padding: 0;
+  /* content doesn't wrap while animating width */
+  min-width: 0;
 }
 
 .sidebar.open {
@@ -19,10 +22,17 @@
   padding: 16px 0 24px;
 }
 
+/* Prevent content from overflowing while sidebar animates */
+.inner {
+  min-width: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 .section {
   margin-bottom: 8px;
-  white-space: nowrap;
-  overflow: hidden;
+  /* Remove overflow:hidden — it was clipping the scroll area */
 }
 
 .sectionLabel {
@@ -33,6 +43,7 @@
   letter-spacing: 0.12em;
   color: var(--text-muted);
   padding: 0 16px 6px;
+  white-space: nowrap;
 }
 
 .item {
@@ -49,6 +60,7 @@
   transition: background 0.12s, color 0.12s;
   text-align: left;
   position: relative;
+  white-space: nowrap;
 }
 
 .item::before {
@@ -129,6 +141,7 @@
   margin-top: auto;
   padding: 16px;
   border-top: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 .footerText {

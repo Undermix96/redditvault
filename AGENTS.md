@@ -116,3 +116,21 @@ docker compose up -d
 - Non rinominare le immagini Docker rimuovendo il prefisso `undermix/`.
 - Non aggiungere dipendenze pesanti al backend: deve restare un singolo file leggero.
 - Non usare `build:` in `docker-compose.yml` (riservato a `docker-compose.build.yml`).
+
+## Problemi noti risolti
+
+### nginx e media 404
+Il blocco `location ~* \.(jpg|png|gif...)$` in nginx intercetta le URL dei media
+prima del proxy `/media/`. La regola degli asset statici deve contenere SOLO
+estensioni degli artifact del build frontend (js, css, svg, woff2, ico) e deve
+trovarsi DOPO i blocchi `/media/` e `/api/`.
+
+### Video senza controlli nel lightbox
+Il `<video>` nel Lightbox deve avere l'attributo `controls` abilitato (non
+`controls={false}`). Il feed card invece usa autoplay muto senza controlli
+(design corretto: click apre il lightbox).
+
+### Sidebar clipping
+Non usare `overflow: hidden` su `.section` — impedisce lo scroll. Usare un
+wrapper `.inner` con `min-width` fisso per evitare reflowing durante l'animazione
+della larghezza.

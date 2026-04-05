@@ -13,6 +13,8 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
+  /* Prevent any child from pushing height */
+  overflow: hidden;
 }
 
 .left {
@@ -20,6 +22,7 @@
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  min-width: 0;
 }
 
 .menuBtn {
@@ -29,6 +32,7 @@
   padding: 6px;
   border-radius: var(--radius);
   transition: background 0.15s;
+  flex-shrink: 0;
 }
 .menuBtn:hover { background: var(--surface2); }
 .menuBtn span {
@@ -45,6 +49,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .logoIcon {
@@ -59,6 +64,7 @@
   font-size: 17px;
   letter-spacing: -0.02em;
   color: var(--text);
+  white-space: nowrap;
 }
 
 .subredditBadge {
@@ -71,13 +77,19 @@
   border: 1px solid var(--accent-glow);
   border-radius: 99px;
   color: var(--accent2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
 }
 
 .rSlash {
   color: var(--accent);
   margin-right: 1px;
+  flex-shrink: 0;
 }
 
+/* Type filter pill row — never shrinks, never wraps */
 .typeNav {
   display: flex;
   align-items: center;
@@ -86,6 +98,8 @@
   border: 1px solid var(--border);
   border-radius: 99px;
   padding: 3px;
+  flex-shrink: 0;   /* ← key fix: never compress */
+  white-space: nowrap;
 }
 
 .typeBtn {
@@ -98,6 +112,7 @@
   border-radius: 99px;
   color: var(--text-dim);
   transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
 }
 .typeBtn:hover { color: var(--text); }
 .typeBtn.active {
@@ -105,7 +120,13 @@
   color: #fff;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .subredditBadge { display: none; }
-  .typeBtn { padding: 5px 9px; }
+  .typeBtn { padding: 5px 8px; font-size: 11px; }
+  .logoText { font-size: 15px; }
+}
+
+@media (max-width: 400px) {
+  .logo { gap: 4px; }
+  .typeBtn { padding: 4px 6px; }
 }
