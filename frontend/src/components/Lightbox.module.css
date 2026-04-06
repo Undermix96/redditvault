@@ -222,3 +222,22 @@
 
 /* ── Fullscreen ─────────────────────────────────────────────────────────── */
 :fullscreen .container { background: #000; }
+
+/* ── Drag handle — transparent swipe zone over top 65% of media area ───── */
+/*
+ * Covers the top portion of the media area so swipe-down-to-close works
+ * anywhere on the content, including over videos.
+ * pointer-events: none → click/tap passes through to the media below.
+ * Only touch events are explicitly captured by the JSX handlers on this el.
+ * The bottom 35% is intentionally uncovered so native video controls
+ * (seek bar, play/pause, volume) remain fully interactive on mobile.
+ */
+.dragHandle {
+  position: absolute;
+  inset: 0 0 35% 0;   /* top 65% */
+  z-index: 10;
+  pointer-events: none;  /* clicks pass through */
+  touch-action: none;    /* we handle touch manually, no browser scroll */
+  /* Uncomment the line below to debug the zone visually: */
+  /* background: rgba(255,0,0,0.15); */
+}
