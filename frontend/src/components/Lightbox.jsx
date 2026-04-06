@@ -3,45 +3,47 @@ import { useStore } from '../stores/useStore'
 import styles from './Lightbox.module.css'
 
 export default function Lightbox() {
-  const { lightboxPost, lightboxIndex, lightboxList, closeLightbox, lightboxNext, lightboxPrev } = useStore()
-  const videoRef = useRef(null)
+  const {
+    lightboxPost, lightboxIndex, lightboxList,
+    closeLightbox, lightboxNext, lightboxPrev
+  } = useStore()
+
+  const videoRef     = useRef(null)
   const containerRef = useRef(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [showControls, setShowControls] = useState(true)
+  const [showControls, setShowControls]  = useState(true)
   const hideTimer = useRef(null)
 
-  // Swipe-to-close state
-  const touchStartY = useRef(null)
-  const touchStartX = useRef(null)
+  // Swipe-to-close
+  const touchStartY  = useRef(null)
+  const touchStartX  = useRef(null)
   const [dragY, setDragY] = useState(0)
-  const isDragging = useRef(false)
+  const isDragging   = useRef(false)
 
-  const isVideo = lightboxPost?.type === 'video' || lightboxPost?.type === 'gif'
+  // gif → <img>, video → <video controls>, image → <img>
+  const isGif   = lightboxPost?.type === 'gif'
+  const isVideo = lightboxPost?.type === 'video'
   const hasPrev = lightboxIndex > 0
   const hasNext = lightboxIndex < lightboxList.length - 1
 
-  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  // Autoplay on post change
   useEffect(() => {
-    if (videoRef.current) {
+    if (isVideo && videoRef.current) {
       videoRef.current.load()
       videoRef.current.play().catch(() => {})
     }
-  }, [lightboxPost])
+  }, [lightboxPost, isVideo])
 
-  // Fullscreen listener
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', handler)
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
 
-  // Auto-hide overlay after 3s
   const resetHideTimer = useCallback(() => {
     setShowControls(true)
     clearTimeout(hideTimer.current)
@@ -61,30 +63,23 @@ export default function Lightbox() {
     }
   }
 
-  // Swipe handlers — only on the backdrop/container, not on the video element
+  // Touch: skip VIDEO element so native seek/volume still work
   const handleTouchStart = (e) => {
-    // Don't intercept touches on the video element itself
     if (e.target.tagName === 'VIDEO') return
     touchStartY.current = e.touches[0].clientY
     touchStartX.current = e.touches[0].clientX
-    isDragging.current = false
+    isDragging.current  = false
   }
 
   const handleTouchMove = (e) => {
     if (touchStartY.current === null) return
     if (e.target.tagName === 'VIDEO') return
-
     const dy = e.touches[0].clientY - touchStartY.current
     const dx = e.touches[0].clientX - touchStartX.current
-
-    // Only treat as vertical drag if more vertical than horizontal
     if (!isDragging.current && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
       isDragging.current = true
     }
-
-    if (isDragging.current && dy > 0) {
-      setDragY(dy)
-    }
+    if (isDragging.current && dy > 0) setDragY(dy)
   }
 
   const handleTouchEnd = () => {
@@ -95,13 +90,13 @@ export default function Lightbox() {
     }
     touchStartY.current = null
     touchStartX.current = null
-    isDragging.current = false
+    isDragging.current  = false
   }
 
   if (!lightboxPost) return null
 
   const dragOpacity = Math.max(0.3, 1 - dragY / 300)
-  const dragScale = Math.max(0.88, 1 - dragY / 1200)
+  const dragScale   = Math.max(0.88, 1 - dragY / 1200)
 
   return (
     <div
@@ -120,7 +115,7 @@ export default function Lightbox() {
           transition: 'none'
         } : undefined}
       >
-        {/* Top Bar */}
+        {/* ── Top bar ─────────────────────────────────────────────────── */}
         <div className={styles.topBar}>
           <div className={styles.topLeft}>
             <span className={styles.subredditTag}>r/{lightboxPost.subreddit}</span>
@@ -132,21 +127,22 @@ export default function Lightbox() {
             <span className={styles.counter}>
               {lightboxIndex + 1} / {lightboxList.length}
             </span>
-            <button className={styles.iconBtn} onClick={toggleFullscreen} title="Fullscreen">
+            <button className={styles.iconBtn} onClick={toggleFullscreen}>
               {isFullscreen ? '⊡' : '⛶'}
             </button>
-            <button className={styles.iconBtn} onClick={closeLightbox} title="Chiudi">✕</button>
+            <button className={styles.iconBtn} onClick={closeLightbox}>✕</button>
           </div>
         </div>
 
-        {/* Media area — no overflow:hidden so native video controls are reachable */}
+        {/* ── Media ───────────────────────────────────────────────────── */}
         <div className={styles.mediaArea}>
           {isVideo ? (
+            /* MP4/WebM etc — native controls for play/pause/seek */
             <video
               ref={videoRef}
               key={lightboxPost.id}
               src={lightboxPost.url}
-              className={styles.media}
+              className={styles.mediaEl}
               autoPlay
               loop
               playsInline
@@ -154,35 +150,35 @@ export default function Lightbox() {
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
+            /* GIF and images — rendered as <img>; GIFs loop natively */
             <img
               key={lightboxPost.id}
               src={lightboxPost.url}
               alt={lightboxPost.title}
-              className={styles.mediaImg}
+              className={styles.mediaEl}
               onClick={(e) => e.stopPropagation()}
             />
           )}
-
-          {/* Prev / Next arrows */}
-          {hasPrev && (
-            <button
-              className={`${styles.navBtn} ${styles.navPrev}`}
-              onClick={(e) => { e.stopPropagation(); lightboxPrev() }}
-              aria-label="Precedente"
-            >‹</button>
-          )}
-          {hasNext && (
-            <button
-              className={`${styles.navBtn} ${styles.navNext}`}
-              onClick={(e) => { e.stopPropagation(); lightboxNext() }}
-              aria-label="Successivo"
-            >›</button>
-          )}
         </div>
 
-        {/* Bottom bar — only "open original" link, no dot nav */}
+        {/* ── Prev / Next — outside mediaArea, always on top ──────────── */}
+        {hasPrev && (
+          <button
+            className={`${styles.navBtn} ${styles.navPrev}`}
+            onClick={(e) => { e.stopPropagation(); lightboxPrev() }}
+            aria-label="Precedente"
+          >‹</button>
+        )}
+        {hasNext && (
+          <button
+            className={`${styles.navBtn} ${styles.navNext}`}
+            onClick={(e) => { e.stopPropagation(); lightboxNext() }}
+            aria-label="Successivo"
+          >›</button>
+        )}
+
+        {/* ── Bottom bar ──────────────────────────────────────────────── */}
         <div className={styles.bottomBar}>
-          <div />
           <a
             href={lightboxPost.url}
             target="_blank"

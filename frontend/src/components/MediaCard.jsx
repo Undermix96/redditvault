@@ -7,13 +7,18 @@ const TYPE_COLOR = { video: 'var(--accent)', gif: 'var(--purple)', image: 'var(-
 
 export default function MediaCard({ post, onClick, index }) {
   const videoRef = useRef(null)
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded]   = useState(false)
   const [errored, setErrored] = useState(false)
+
+  // Only MP4/WebM videos get autoplay via IntersectionObserver
+  const isVideo = post.type === 'video'
+  // GIFs rendered as <img> — browser loops them natively, no JS needed
+  const isGif   = post.type === 'gif'
 
   const { ref: inViewRef } = useInView({
     threshold: 0.2,
     onChange: (inView) => {
-      if (!videoRef.current) return
+      if (!isVideo || !videoRef.current) return
       if (inView) {
         videoRef.current.play().catch(() => {})
       } else {
@@ -21,8 +26,6 @@ export default function MediaCard({ post, onClick, index }) {
       }
     }
   })
-
-  const isVideo = post.type === 'video' || post.type === 'gif'
 
   return (
     <article
@@ -33,6 +36,7 @@ export default function MediaCard({ post, onClick, index }) {
       <div className={styles.mediaWrap} ref={inViewRef}>
         {!errored ? (
           isVideo ? (
+            /* MP4/WebM — muted autoplay in feed */
             <video
               ref={videoRef}
               src={post.url}
@@ -46,6 +50,8 @@ export default function MediaCard({ post, onClick, index }) {
               onError={() => setErrored(true)}
             />
           ) : (
+            /* GIF + image — both rendered as <img>.
+               GIFs animate automatically, images load lazily. */
             <img
               src={post.url}
               alt={post.title}
