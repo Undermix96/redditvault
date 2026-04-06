@@ -11,7 +11,7 @@ export default function MediaCard({ post, onClick, index }) {
   const [errored, setErrored] = useState(false)
 
   const { ref: inViewRef } = useInView({
-    threshold: 0.3,
+    threshold: 0.2,
     onChange: (inView) => {
       if (!videoRef.current) return
       if (inView) {
@@ -23,21 +23,20 @@ export default function MediaCard({ post, onClick, index }) {
   })
 
   const isVideo = post.type === 'video' || post.type === 'gif'
-  const isGif = post.type === 'gif'
 
   return (
     <article
       className={styles.card}
-      style={{ '--anim-delay': `${(index % 24) * 0.03}s` }}
+      style={{ '--anim-delay': `${Math.min(index, 8) * 0.04}s` }}
       onClick={onClick}
     >
       <div className={styles.mediaWrap} ref={inViewRef}>
         {!errored ? (
-          isVideo || isGif ? (
+          isVideo ? (
             <video
               ref={videoRef}
               src={post.url}
-              className={`${styles.media} ${loaded ? styles.visible : ''}`}
+              className={`${styles.mediaVideo} ${loaded ? styles.visible : ''}`}
               muted
               loop
               playsInline
@@ -58,18 +57,13 @@ export default function MediaCard({ post, onClick, index }) {
             />
           )
         ) : (
-          <div className={styles.errorMedia}>
-            <span>⚠</span>
-          </div>
+          <div className={styles.errorMedia}><span>⚠</span></div>
         )}
 
         {!loaded && !errored && <div className={styles.placeholder} />}
 
         <div className={styles.overlay}>
-          <span
-            className={styles.typeBadge}
-            style={{ '--tc': TYPE_COLOR[post.type] }}
-          >
+          <span className={styles.typeBadge} style={{ '--tc': TYPE_COLOR[post.type] }}>
             {TYPE_BADGE[post.type]}
           </span>
           <span className={styles.expandIcon}>⤢</span>

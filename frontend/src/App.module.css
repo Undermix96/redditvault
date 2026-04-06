@@ -20,12 +20,39 @@
   min-height: calc(100vh - var(--header-h));
 }
 
+/* Overlay dimmer shown behind sidebar on mobile */
+.sidebarOverlay {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  /* Collapse grid — sidebar is no longer in the flow */
   .layout,
   .layout.sidebarVisible {
     grid-template-columns: 0 1fr;
   }
+
   .main {
     padding: 16px 12px 60px;
+  }
+
+  /* Sidebar floats over content on mobile */
+  .layout .sidebar-slot {
+    position: fixed;
+  }
+
+  /* Tap-to-close backdrop */
+  .sidebarOverlay {
+    display: block;
+    position: fixed;
+    inset: var(--header-h) 0 0 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 49;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 }

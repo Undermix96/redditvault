@@ -1,65 +1,77 @@
+/* Reddit-style card: full width, media on top, meta below */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-  animation: fadeUp 0.4s var(--anim-delay, 0s) both;
-  will-change: transform;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  animation: fadeUp 0.35s var(--anim-delay, 0s) both;
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .card:hover {
   border-color: var(--border-bright);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
 }
 
-.card:hover .overlay {
-  opacity: 1;
-}
+.card:hover .overlay { opacity: 1; }
 
-.card:hover .expandIcon {
-  transform: scale(1.1);
-}
-
+/* ── Media wrapper ── */
 .mediaWrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  /* Natural aspect ratio — don't force 16:9 */
   background: var(--surface2);
-  overflow: hidden;
+  line-height: 0; /* removes gap below inline media */
 }
 
 .media {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+  display: block;
   opacity: 0;
   transition: opacity 0.3s;
+  background: var(--surface2);
 }
 
-.media.visible {
+/* Videos: cover crop in feed for uniform look */
+.mediaVideo {
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  object-fit: contain;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: #000;
+}
+
+.media.visible,
+.mediaVideo.visible {
   opacity: 1;
 }
 
 .placeholder {
   position: absolute;
   inset: 0;
+  min-height: 200px;
   background: linear-gradient(135deg, var(--surface2), var(--surface3));
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
 @keyframes shimmer {
   0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  50%       { opacity: 1; }
 }
 
+/* ── Hover overlay (top-left badge + expand icon) ── */
 .overlay {
   position: absolute;
   inset: 0;
@@ -71,11 +83,12 @@
   transition: opacity 0.2s;
   background: linear-gradient(
     to bottom,
-    rgba(0,0,0,0.45) 0%,
-    transparent 40%,
-    transparent 60%,
-    rgba(0,0,0,0.6) 100%
+    rgba(0,0,0,0.4) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0,0,0,0.5) 100%
   );
+  pointer-events: none;
 }
 
 .typeBadge {
@@ -84,7 +97,7 @@
   font-weight: 500;
   padding: 3px 8px;
   border-radius: 99px;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.65);
   color: var(--tc, var(--text));
   border: 1px solid var(--tc, var(--border));
   letter-spacing: 0.05em;
@@ -93,14 +106,13 @@
 .expandIcon {
   font-size: 16px;
   color: rgba(255,255,255,0.8);
-  transition: transform 0.2s;
   line-height: 1;
   align-self: flex-end;
 }
 
 .errorMedia {
   width: 100%;
-  height: 100%;
+  min-height: 160px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,20 +121,18 @@
   background: var(--surface2);
 }
 
+/* ── Meta ── */
 .meta {
-  padding: 10px 12px 12px;
+  padding: 10px 14px 13px;
+  border-top: 1px solid var(--border);
 }
 
 .title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
-  line-height: 1.4;
-  margin-bottom: 6px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  line-height: 1.45;
+  margin-bottom: 7px;
   letter-spacing: -0.01em;
 }
 

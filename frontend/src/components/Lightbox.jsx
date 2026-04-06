@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { useStore } from '../stores/useStore'
 import styles from './Lightbox.module.css'
 
@@ -10,6 +10,12 @@ export default function Lightbox() {
   const [showControls, setShowControls] = useState(true)
   const hideTimer = useRef(null)
 
+  // Swipe-to-close state
+  const touchStartY = useRef(null)
+  const touchStartX = useRef(null)
+  const [dragY, setDragY] = useState(0)
+  const isDragging = useRef(false)
+
   const isVideo = lightboxPost?.type === 'video' || lightboxPost?.type === 'gif'
   const hasPrev = lightboxIndex > 0
   const hasNext = lightboxIndex < lightboxList.length - 1
@@ -20,7 +26,7 @@ export default function Lightbox() {
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  // Autoplay when post changes
+  // Autoplay on post change
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.load()
@@ -28,24 +34,24 @@ export default function Lightbox() {
     }
   }, [lightboxPost])
 
-  // Fullscreen change listener
+  // Fullscreen listener
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', handler)
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
 
-  // Auto-hide UI overlays after 3s of no mouse movement
-  const resetHideTimer = () => {
+  // Auto-hide overlay after 3s
+  const resetHideTimer = useCallback(() => {
     setShowControls(true)
     clearTimeout(hideTimer.current)
     hideTimer.current = setTimeout(() => setShowControls(false), 3000)
-  }
+  }, [])
 
   useEffect(() => {
     resetHideTimer()
     return () => clearTimeout(hideTimer.current)
-  }, [lightboxPost])
+  }, [lightboxPost, resetHideTimer])
 
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
@@ -55,21 +61,64 @@ export default function Lightbox() {
     }
   }
 
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) closeLightbox()
+  // Swipe handlers — only on the backdrop/container, not on the video element
+  const handleTouchStart = (e) => {
+    // Don't intercept touches on the video element itself
+    if (e.target.tagName === 'VIDEO') return
+    touchStartY.current = e.touches[0].clientY
+    touchStartX.current = e.touches[0].clientX
+    isDragging.current = false
+  }
+
+  const handleTouchMove = (e) => {
+    if (touchStartY.current === null) return
+    if (e.target.tagName === 'VIDEO') return
+
+    const dy = e.touches[0].clientY - touchStartY.current
+    const dx = e.touches[0].clientX - touchStartX.current
+
+    // Only treat as vertical drag if more vertical than horizontal
+    if (!isDragging.current && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+      isDragging.current = true
+    }
+
+    if (isDragging.current && dy > 0) {
+      setDragY(dy)
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (isDragging.current && dragY > 80) {
+      closeLightbox()
+    } else {
+      setDragY(0)
+    }
+    touchStartY.current = null
+    touchStartX.current = null
+    isDragging.current = false
   }
 
   if (!lightboxPost) return null
 
+  const dragOpacity = Math.max(0.3, 1 - dragY / 300)
+  const dragScale = Math.max(0.88, 1 - dragY / 1200)
+
   return (
     <div
       className={styles.backdrop}
-      onClick={handleBackdropClick}
+      style={{ opacity: dragY > 0 ? dragOpacity : undefined }}
       onMouseMove={resetHideTimer}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div
         ref={containerRef}
         className={`${styles.container} ${showControls ? styles.showControls : ''}`}
+        style={dragY > 0 ? {
+          transform: `translateY(${dragY}px) scale(${dragScale})`,
+          transition: 'none'
+        } : undefined}
       >
         {/* Top Bar */}
         <div className={styles.topBar}>
@@ -90,7 +139,7 @@ export default function Lightbox() {
           </div>
         </div>
 
-        {/* Media area */}
+        {/* Media area — no overflow:hidden so native video controls are reachable */}
         <div className={styles.mediaArea}>
           {isVideo ? (
             <video
@@ -109,12 +158,12 @@ export default function Lightbox() {
               key={lightboxPost.id}
               src={lightboxPost.url}
               alt={lightboxPost.title}
-              className={styles.media}
+              className={styles.mediaImg}
               onClick={(e) => e.stopPropagation()}
             />
           )}
 
-          {/* Prev / Next arrows — shown only for images (video has native controls) */}
+          {/* Prev / Next arrows */}
           {hasPrev && (
             <button
               className={`${styles.navBtn} ${styles.navPrev}`}
@@ -131,19 +180,9 @@ export default function Lightbox() {
           )}
         </div>
 
-        {/* Bottom bar */}
+        {/* Bottom bar — only "open original" link, no dot nav */}
         <div className={styles.bottomBar}>
-          <div className={styles.bottomLeft} />
-          <div className={styles.dotNav}>
-            {lightboxList.length <= 30 && lightboxList.map((_, i) => (
-              <button
-                key={i}
-                className={`${styles.dot} ${i === lightboxIndex ? styles.dotActive : ''}`}
-                onClick={() => useStore.getState().openLightbox(lightboxList[i], lightboxList, i)}
-                aria-label={`Vai al media ${i + 1}`}
-              />
-            ))}
-          </div>
+          <div />
           <a
             href={lightboxPost.url}
             target="_blank"

@@ -7,8 +7,9 @@ import Lightbox from './components/Lightbox'
 import styles from './App.module.css'
 
 export default function App() {
-  const { lightboxPost, lightboxNext, lightboxPrev, closeLightbox, sidebarOpen } = useStore()
+  const { lightboxPost, lightboxNext, lightboxPrev, closeLightbox, sidebarOpen, setSidebarOpen } = useStore()
 
+  // Keyboard nav for lightbox
   useEffect(() => {
     const handler = (e) => {
       if (!lightboxPost) return
@@ -24,6 +25,14 @@ export default function App() {
     <div className={`${styles.layout} ${sidebarOpen ? styles.sidebarVisible : ''}`}>
       <Header />
       <Sidebar />
+      {/* Tap-to-close overlay behind sidebar on mobile */}
+      {sidebarOpen && (
+        <div
+          className={styles.sidebarOverlay}
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <main className={styles.main}>
         <Feed />
       </main>

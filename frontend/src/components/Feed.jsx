@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { useStore } from '../stores/useStore'
 import { usePosts } from '../hooks/useApi'
@@ -15,21 +15,18 @@ export default function Feed() {
   const { ref: sentinelRef, inView } = useInView({ threshold: 0.1 })
 
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
+    if (inView && hasNextPage && !isFetchingNextPage) fetchNextPage()
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const allPosts = data?.pages.flatMap(p => p.posts) ?? []
 
-  const handleOpen = (post, index) => {
-    openLightbox(post, allPosts, index)
-  }
+  const handleOpen = (post, index) => openLightbox(post, allPosts, index)
 
   if (isLoading) return (
-    <div className={styles.grid}>
-      {[...Array(12)].map((_, i) => (
-        <div key={i} className={styles.skeletonCard} style={{ '--d': i * 0.04 + 's', '--h': (150 + (i % 3) * 80) + 'px' }} />
+    <div className={styles.feed}>
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className={styles.skeletonCard}
+          style={{ '--d': i * 0.08 + 's', '--h': (280 + (i % 2) * 60) + 'px' }} />
       ))}
     </div>
   )
@@ -50,7 +47,7 @@ export default function Feed() {
 
   return (
     <div>
-      <div className={styles.grid}>
+      <div className={styles.feed}>
         {allPosts.map((post, i) => (
           <MediaCard
             key={post.id}
@@ -63,9 +60,7 @@ export default function Feed() {
       <div ref={sentinelRef} className={styles.sentinel}>
         {isFetchingNextPage && (
           <div className={styles.loadingMore}>
-            <span />
-            <span />
-            <span />
+            <span /><span /><span />
           </div>
         )}
         {!hasNextPage && allPosts.length > 0 && (
