@@ -8,7 +8,6 @@
   -webkit-backdrop-filter: blur(8px);
   animation: fadeIn 0.15s ease;
   transition: opacity 0.1s;
-  touch-action: none; /* we manage all touch manually */
 }
 
 @keyframes fadeIn {
@@ -32,8 +31,6 @@
 /* ── Top bar ────────────────────────────────────────────────────────────── */
 .topBar {
   flex-shrink: 0;
-  position: relative;
-  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -43,6 +40,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s;
+  /* No position/z-index needed — it's in the flex flow above mediaArea */
 }
 
 .showControls .topBar {
@@ -118,9 +116,6 @@
   font-size: 15px;
   transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
-  /* Ensure buttons are always tappable above everything */
-  position: relative;
-  z-index: 50;
 }
 .iconBtn:hover {
   background: rgba(255,255,255,0.12);
@@ -154,11 +149,16 @@
 }
 
 /* ── Prev / Next ────────────────────────────────────────────────────────── */
+/*
+ * Absolutely positioned inside .container (not .mediaArea) so they are
+ * never clipped by mediaArea's overflow:hidden.
+ * No z-index needed — they are in the DOM after mediaArea so they naturally
+ * paint on top. pointer-events toggled via showControls.
+ */
 .navBtn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 50; /* same level as iconBtn — always tappable */
   width: 44px;
   height: 66px;
   display: flex;
@@ -185,8 +185,6 @@
 /* ── Bottom bar ─────────────────────────────────────────────────────────── */
 .bottomBar {
   flex-shrink: 0;
-  position: relative;
-  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -212,8 +210,6 @@
   background: rgba(0,0,0,0.45);
   transition: color 0.15s, border-color 0.15s;
   white-space: nowrap;
-  position: relative;
-  z-index: 50;
 }
 .openBtn:hover { color: var(--text); border-color: var(--border-bright); }
 

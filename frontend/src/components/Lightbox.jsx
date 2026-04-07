@@ -10,19 +10,25 @@ export default function Lightbox() {
 
   const videoRef     = useRef(null)
   const containerRef = useRef(null)
+  const backdropRef  = useRef(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
   const hideTimer = useRef(null)
 
-  // Swipe-to-close
-  const touchStartY = useRef(null)
-  const touchStartX = useRef(null)
+  // Swipe state — all in refs so event listeners (non-React) can access them
+  const touchStartY  = useRef(null)
+  const touchStartX  = useRef(null)
+  const dragYRef     = useRef(0)
+  const isDragging   = useRef(false)
   const [dragY, setDragY] = useState(0)
-  const isDragging  = useRef(false)
 
   const isVideo = lightboxPost?.type === 'video'
   const hasPrev = lightboxIndex > 0
   const hasNext = lightboxIndex < lightboxList.length - 1
+
+  // Store latest callbacks in refs so native listeners always call current version
+  const closeLightboxRef = useRef(closeLightbox)
+  useEffect(() => { closeLightboxRef.current = closeLightbox }, [closeLightbox])
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -53,65 +59,91 @@ export default function Lightbox() {
     return () => clearTimeout(hideTimer.current)
   }, [lightboxPost, resetHideTimer])
 
+  // ── Native (non-passive) touch listeners on the backdrop ───────────────
+  // React synthetic touch events cannot call preventDefault() reliably on
+  // modern browsers because React attaches listeners as passive by default.
+  // We need { passive: false } to be able to call preventDefault() during
+  // touchmove and prevent the browser from scrolling/zooming.
+  useEffect(() => {
+    const el = backdropRef.current
+    if (!el) return
+
+    const shouldIgnore = (e) => {
+      // Always let buttons and links handle their own touch → click flow
+      if (e.target.closest('button, a')) return true
+
+      // Bottom 25% of a video element = native controls strip
+      if (e.target.tagName === 'VIDEO') {
+        const rect = e.target.getBoundingClientRect()
+        const relY = e.touches[0].clientY - rect.top
+        if (relY > rect.height * 0.75) return true
+      }
+
+      return false
+    }
+
+    const onStart = (e) => {
+      if (shouldIgnore(e)) return
+      touchStartY.current = e.touches[0].clientY
+      touchStartX.current = e.touches[0].clientX
+      isDragging.current  = false
+      dragYRef.current    = 0
+      setDragY(0)
+    }
+
+    const onMove = (e) => {
+      if (touchStartY.current === null) return
+
+      const dy = e.touches[0].clientY - touchStartY.current
+      const dx = e.touches[0].clientX - touchStartX.current
+
+      if (!isDragging.current) {
+        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+          isDragging.current = true
+        } else if (Math.abs(dx) > 10) {
+          touchStartY.current = null
+          return
+        }
+      }
+
+      if (isDragging.current && dy > 0) {
+        // This preventDefault() actually works because listener is non-passive
+        e.preventDefault()
+        dragYRef.current = dy
+        setDragY(dy)
+      }
+    }
+
+    const onEnd = () => {
+      if (isDragging.current && dragYRef.current > 80) {
+        closeLightboxRef.current()
+      } else {
+        dragYRef.current = 0
+        setDragY(0)
+      }
+      touchStartY.current = null
+      touchStartX.current = null
+      isDragging.current  = false
+    }
+
+    // { passive: false } is the key — allows preventDefault() in onMove
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove',  onMove,  { passive: false })
+    el.addEventListener('touchend',   onEnd,   { passive: true })
+
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove',  onMove)
+      el.removeEventListener('touchend',   onEnd)
+    }
+  }, []) // no deps — refs keep values current
+
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
       await containerRef.current?.requestFullscreen?.()
     } else {
       await document.exitFullscreen?.()
     }
-  }
-
-  // ── Swipe handlers on the container ────────────────────────────────────
-  // We attach to the container and check:
-  //   1. The touch did NOT start on an interactive element (button, a, video)
-  //   2. The touch started in the top 70% of the screen (clear of video controls)
-  const handleTouchStart = (e) => {
-    // Skip if touching an interactive element — let those handle their own events
-    const tag = e.target.tagName
-    if (tag === 'BUTTON' || tag === 'A' || tag === 'VIDEO') return
-
-    const viewportH = window.innerHeight
-    const startY = e.touches[0].clientY
-
-    // Only start swipe gesture if touch is in top 70% of viewport
-    if (startY > viewportH * 0.70) return
-
-    touchStartY.current = startY
-    touchStartX.current = e.touches[0].clientX
-    isDragging.current  = false
-    setDragY(0)
-  }
-
-  const handleTouchMove = (e) => {
-    if (touchStartY.current === null) return
-
-    const dy = e.touches[0].clientY - touchStartY.current
-    const dx = e.touches[0].clientX - touchStartX.current
-
-    if (!isDragging.current) {
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-        isDragging.current = true
-      } else if (Math.abs(dx) > 10) {
-        touchStartY.current = null
-        return
-      }
-    }
-
-    if (isDragging.current && dy > 0) {
-      e.preventDefault()
-      setDragY(dy)
-    }
-  }
-
-  const handleTouchEnd = () => {
-    if (isDragging.current && dragY > 80) {
-      closeLightbox()
-    } else {
-      setDragY(0)
-    }
-    touchStartY.current = null
-    touchStartX.current = null
-    isDragging.current  = false
   }
 
   if (!lightboxPost) return null
@@ -121,12 +153,10 @@ export default function Lightbox() {
 
   return (
     <div
+      ref={backdropRef}
       className={styles.backdrop}
       style={{ opacity: dragOpacity }}
       onMouseMove={resetHideTimer}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       <div
         ref={containerRef}
@@ -167,7 +197,6 @@ export default function Lightbox() {
               loop
               playsInline
               controls
-              onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <img
@@ -175,7 +204,6 @@ export default function Lightbox() {
               src={lightboxPost.url}
               alt={lightboxPost.title}
               className={styles.mediaEl}
-              onClick={(e) => e.stopPropagation()}
             />
           )}
         </div>
@@ -184,14 +212,14 @@ export default function Lightbox() {
         {hasPrev && (
           <button
             className={`${styles.navBtn} ${styles.navPrev}`}
-            onClick={(e) => { e.stopPropagation(); lightboxPrev() }}
+            onClick={lightboxPrev}
             aria-label="Precedente"
           >‹</button>
         )}
         {hasNext && (
           <button
             className={`${styles.navBtn} ${styles.navNext}`}
-            onClick={(e) => { e.stopPropagation(); lightboxNext() }}
+            onClick={lightboxNext}
             aria-label="Successivo"
           >›</button>
         )}
@@ -203,7 +231,6 @@ export default function Lightbox() {
             target="_blank"
             rel="noopener noreferrer"
             className={styles.openBtn}
-            onClick={(e) => e.stopPropagation()}
           >
             Apri originale ↗
           </a>
