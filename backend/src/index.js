@@ -32,6 +32,19 @@ async function safeStat(path) {
   }
 }
 
+
+// Filename format: <source>-<YYYY>-<MM>-<DD>-<postid>-<rank>-<filehash>-<post title>.<ext>
+// The post title starts after the 7th dash-separated field.
+function extractTitle(filename) {
+  const name = basename(filename, extname(filename))
+  const parts = name.split('-')
+  if (parts.length > 7) {
+    return parts.slice(7).join('-').replace(/_/g, ' ').trim() || name
+  }
+  // Fallback for non-standard filenames
+  return name.replace(/[_-]+/g, ' ').trim()
+}
+
 async function scanSubreddit(subredditPath, subredditName) {
   const posts = []
   let entries = []
@@ -69,7 +82,7 @@ async function scanSubreddit(subredditPath, subredditName) {
             subreddit: subredditName,
             category: categoryDir,
             filename: file,
-            title: basename(file, extname(file)).replace(/[_\-]+/g, ' '),
+            title: extractTitle(file),
             type: mediaType,
             url: urlPath,
             size: fs.size,
