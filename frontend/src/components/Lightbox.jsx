@@ -14,13 +14,12 @@ export default function Lightbox() {
   const [showControls, setShowControls] = useState(true)
   const hideTimer = useRef(null)
 
-  // Swipe-to-close state
+  // Swipe-to-close
   const touchStartY = useRef(null)
   const touchStartX = useRef(null)
   const [dragY, setDragY] = useState(0)
   const isDragging  = useRef(false)
 
-  const isGif   = lightboxPost?.type === 'gif'
   const isVideo = lightboxPost?.type === 'video'
   const hasPrev = lightboxIndex > 0
   const hasNext = lightboxIndex < lightboxList.length - 1
@@ -62,11 +61,7 @@ export default function Lightbox() {
     }
   }
 
-  // ── Swipe handlers on the drag-handle overlay ──────────────────────────
-  // The handle sits over the top 70% of the media area, clear of the native
-  // video controls strip (which occupies the bottom ~40px of the video el).
-  // pointer-events: none on the handle keeps click-through to the media;
-  // only touch events are captured here for the swipe gesture.
+  // ── Swipe handlers ─────────────────────────────────────────────────────
   const handleTouchStart = (e) => {
     touchStartY.current = e.touches[0].clientY
     touchStartX.current = e.touches[0].clientX
@@ -80,18 +75,16 @@ export default function Lightbox() {
     const dx = e.touches[0].clientX - touchStartX.current
 
     if (!isDragging.current) {
-      // Commit to vertical drag only if clearly more vertical than horizontal
       if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
         isDragging.current = true
-      } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
-        // Horizontal swipe — abort, let the event through
+      } else if (Math.abs(dx) > 10) {
+        // horizontal swipe — bail out
         touchStartY.current = null
         return
       }
     }
 
     if (isDragging.current && dy > 0) {
-      // Prevent the page from scrolling while we're dragging
       e.preventDefault()
       setDragY(dy)
     }
@@ -169,23 +162,9 @@ export default function Lightbox() {
               onClick={(e) => e.stopPropagation()}
             />
           )}
-
-          {/*
-           * Drag handle: transparent overlay covering the TOP 65% of the
-           * media area. click-through (pointer-events: none) so taps/clicks
-           * reach the media underneath. Only touch events are handled here.
-           * The bottom 35% is left free so native video controls are fully
-           * usable without triggering the swipe gesture.
-           */}
-          <div
-            className={styles.dragHandle}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          />
         </div>
 
-        {/* ── Prev / Next — z-index above everything ───────────────────── */}
+        {/* ── Prev / Next ──────────────────────────────────────────────── */}
         {hasPrev && (
           <button
             className={`${styles.navBtn} ${styles.navPrev}`}
@@ -213,6 +192,27 @@ export default function Lightbox() {
             Apri originale ↗
           </a>
         </div>
+
+        {/*
+         * ── Drag handle ────────────────────────────────────────────────
+         * Sits above everything (z-index 40) but only over the TOP portion
+         * of the screen (bottom edge = 30% from bottom, leaving the video
+         * controls strip + bottomBar free).
+         *
+         * pointer-events: auto  → receives touch events
+         * background: transparent → visually invisible
+         * No click handler → clicks fall through via the browser's normal
+         * hit-testing (the handle captures touch but not pointer clicks
+         * because we never call stopPropagation on click).
+         *
+         * For debugging, set background to rgba(255,0,0,0.15)
+         */}
+        <div
+          className={styles.dragHandle}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        />
       </div>
     </div>
   )

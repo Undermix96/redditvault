@@ -15,7 +15,7 @@
   to   { opacity: 1; }
 }
 
-/* ── Container — full viewport, flex column, never overflows ────────────── */
+/* ── Container ──────────────────────────────────────────────────────────── */
 .container {
   position: absolute;
   inset: 0;
@@ -23,13 +23,12 @@
   flex-direction: column;
   cursor: none;
   transition: transform 0.25s ease;
-  /* Clamp everything inside the viewport */
   overflow: hidden;
 }
 
 .container.showControls { cursor: default; }
 
-/* ── Top bar — fixed height, always on top ──────────────────────────────── */
+/* ── Top bar ────────────────────────────────────────────────────────────── */
 .topBar {
   flex-shrink: 0;
   position: relative;
@@ -124,23 +123,19 @@
   color: #fff;
 }
 
-/* ── Media area — takes all remaining space, never overflows ────────────── */
+/* ── Media area ─────────────────────────────────────────────────────────── */
 .mediaArea {
   flex: 1;
-  min-height: 0;          /* critical: allows flex child to shrink below content */
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   position: relative;
+  /* z-index: 1 — below dragHandle (z-index 40) and navBtns (z-index 30) */
+  z-index: 1;
 }
 
-/*
- * The media element itself is constrained to the available box.
- * max-width/max-height keep it inside; object-fit:contain letterboxes it.
- * For <video> the native controls are rendered INSIDE the element bounds,
- * so they are always reachable as long as the element fits the screen.
- */
 .mediaEl {
   display: block;
   max-width: 100%;
@@ -149,6 +144,9 @@
   height: auto;
   object-fit: contain;
   animation: mediaIn 0.18s ease;
+  /* Ensure the media itself never intercepts touches meant for dragHandle */
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes mediaIn {
@@ -156,13 +154,12 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* ── Prev / Next — positioned relative to .container, always visible ─────
-   They sit in the middle vertical band, clear of topBar and bottomBar.    */
+/* ── Prev / Next ────────────────────────────────────────────────────────── */
 .navBtn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 30;            /* above mediaArea and bars */
+  z-index: 30;
   width: 44px;
   height: 66px;
   display: flex;
@@ -183,11 +180,10 @@
 }
 
 .navBtn:hover { color: #fff; background: rgba(0,0,0,0.72); }
-
 .navPrev { left: 10px; }
 .navNext { right: 10px; }
 
-/* ── Bottom bar — fixed height, always at the bottom ───────────────────── */
+/* ── Bottom bar ─────────────────────────────────────────────────────────── */
 .bottomBar {
   flex-shrink: 0;
   position: relative;
@@ -220,24 +216,37 @@
 }
 .openBtn:hover { color: var(--text); border-color: var(--border-bright); }
 
-/* ── Fullscreen ─────────────────────────────────────────────────────────── */
-:fullscreen .container { background: #000; }
-
-/* ── Drag handle — transparent swipe zone over top 65% of media area ───── */
+/* ── Drag handle ────────────────────────────────────────────────────────── */
 /*
- * Covers the top portion of the media area so swipe-down-to-close works
- * anywhere on the content, including over videos.
- * pointer-events: none → click/tap passes through to the media below.
- * Only touch events are explicitly captured by the JSX handlers on this el.
- * The bottom 35% is intentionally uncovered so native video controls
- * (seek bar, play/pause, volume) remain fully interactive on mobile.
+ * Placed as the LAST child of .container so it stacks above topBar (z 20),
+ * navBtns (z 30), and mediaArea (z 1) in the natural DOM order.
+ * z-index: 40 makes it explicit.
+ *
+ * Covers the TOP 70% of the viewport (bottom: 30%).
+ * The bottom 30% is left free for:
+ *   - native video controls strip
+ *   - bottomBar
+ *
+ * pointer-events: auto  ← MUST be auto to receive touch events
+ * background: transparent ← invisible
+ * cursor: grab on mobile has no effect but is harmless
+ *
+ * Clicks are NOT blocked: we don't call e.preventDefault() on click,
+ * so tapping the media (e.g. pausing a video) still works because the
+ * browser fires the click on the element below after the touch sequence.
+ *
+ * Touch-action: none opts out of browser scroll/zoom during the gesture.
  */
 .dragHandle {
   position: absolute;
-  inset: 0 0 35% 0;   /* top 65% */
-  z-index: 10;
-  pointer-events: none;  /* clicks pass through */
-  touch-action: none;    /* we handle touch manually, no browser scroll */
-  /* Uncomment the line below to debug the zone visually: */
-  /* background: rgba(255,0,0,0.15); */
+  inset: 0 0 30% 0;        /* top 70% of the container */
+  z-index: 40;
+  background: transparent;
+  touch-action: none;
+  pointer-events: auto;    /* must be auto — that was the bug */
+  /* Debug: uncomment to see the zone */
+  /* background: rgba(255, 0, 0, 0.15); */
 }
+
+/* ── Fullscreen ─────────────────────────────────────────────────────────── */
+:fullscreen .container { background: #000; }
