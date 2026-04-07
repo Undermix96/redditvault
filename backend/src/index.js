@@ -34,15 +34,20 @@ async function safeStat(path) {
 
 
 // Filename format: <source>-<YYYY>-<MM>-<DD>-<postid>-<rank>-<filehash>-<post title>.<ext>
-// The post title starts after the 7th dash-separated field.
 function extractTitle(filename) {
   const name = basename(filename, extname(filename))
   const parts = name.split('-')
   if (parts.length > 7) {
     return parts.slice(7).join('-').replace(/_/g, ' ').trim() || name
   }
-  // Fallback for non-standard filenames
   return name.replace(/[_-]+/g, ' ').trim()
+}
+
+// Extract the post ID (field index 4) used to group album images
+function extractPostId(filename) {
+  const name = basename(filename, extname(filename))
+  const parts = name.split('-')
+  return parts.length > 4 ? parts[4] : null
 }
 
 async function scanSubreddit(subredditPath, subredditName) {
@@ -83,6 +88,7 @@ async function scanSubreddit(subredditPath, subredditName) {
             category: categoryDir,
             filename: file,
             title: extractTitle(file),
+            postId: extractPostId(file),
             type: mediaType,
             url: urlPath,
             size: fs.size,
@@ -94,6 +100,56 @@ async function scanSubreddit(subredditPath, subredditName) {
   }
 
   return posts
+}
+
+// Group raw image items by postId into album posts.
+// Non-image media and single images remain as individual posts.
+function groupIntoAlbums(rawPosts) {
+  // Separate images from other media
+  const images = rawPosts.filter(p => p.type === 'image')
+  const others = rawPosts.filter(p => p.type !== 'image')
+
+  // Group images by postId
+  const byPostId = new Map()
+  const noPostId = []
+
+  for (const img of images) {
+    if (img.postId) {
+      if (!byPostId.has(img.postId)) byPostId.set(img.postId, [])
+      byPostId.get(img.postId).push(img)
+    } else {
+      noPostId.push(img)
+    }
+  }
+
+  const result = [...others, ...noPostId]
+
+  for (const [, group] of byPostId) {
+    // Sort group by filename (rank field ensures natural order)
+    group.sort((a, b) => a.filename.localeCompare(b.filename))
+
+    if (group.length === 1) {
+      // Single image — keep as normal image post
+      result.push(group[0])
+    } else {
+      // Multiple images with same postId → album
+      const first = group[0]
+      result.push({
+        id:        first.postId,
+        subreddit: first.subreddit,
+        category:  first.category,
+        title:     first.title,
+        type:      'album',
+        // Representative thumbnail = first image
+        url:       first.url,
+        // All images in the album
+        images:    group.map(img => ({ id: img.id, url: img.url, title: img.title })),
+        mtime:     Math.max(...group.map(g => g.mtime))
+      })
+    }
+  }
+
+  return result
 }
 
 async function buildIndex() {
@@ -116,17 +172,19 @@ async function buildIndex() {
     const s = await safeStat(entryPath)
     if (!s || !s.isDirectory()) continue
 
-    const posts = await scanSubreddit(entryPath, entry)
-    if (posts.length > 0) {
+    const rawPosts = await scanSubreddit(entryPath, entry)
+    const grouped  = groupIntoAlbums(rawPosts)
+
+    if (grouped.length > 0) {
       subreddits.push({
         name: entry,
-        postCount: posts.length
+        postCount: grouped.length
       })
-      allPosts.push(...posts)
+      allPosts.push(...grouped)
     }
   }
 
-  // Sort posts by mtime descending (newest first)
+  // Sort by mtime descending (newest first)
   allPosts.sort((a, b) => b.mtime - a.mtime)
 
   return { subreddits, posts: allPosts }
@@ -172,7 +230,12 @@ fastify.get('/api/posts', async (req) => {
     posts = posts.filter(p => p.subreddit === subreddit)
   }
   if (type && type !== 'all') {
-    posts = posts.filter(p => p.type === type)
+    // When filtering for 'image', also include albums (which are groups of images)
+    if (type === 'image') {
+      posts = posts.filter(p => p.type === 'image' || p.type === 'album')
+    } else {
+      posts = posts.filter(p => p.type === type)
+    }
   }
 
   const total = posts.length
