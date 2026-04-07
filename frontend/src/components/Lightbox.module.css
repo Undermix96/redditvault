@@ -8,6 +8,7 @@
   -webkit-backdrop-filter: blur(8px);
   animation: fadeIn 0.15s ease;
   transition: opacity 0.1s;
+  touch-action: none; /* we manage all touch manually */
 }
 
 @keyframes fadeIn {
@@ -117,6 +118,9 @@
   font-size: 15px;
   transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
+  /* Ensure buttons are always tappable above everything */
+  position: relative;
+  z-index: 50;
 }
 .iconBtn:hover {
   background: rgba(255,255,255,0.12);
@@ -132,8 +136,6 @@
   justify-content: center;
   overflow: hidden;
   position: relative;
-  /* z-index: 1 — below dragHandle (z-index 40) and navBtns (z-index 30) */
-  z-index: 1;
 }
 
 .mediaEl {
@@ -144,9 +146,6 @@
   height: auto;
   object-fit: contain;
   animation: mediaIn 0.18s ease;
-  /* Ensure the media itself never intercepts touches meant for dragHandle */
-  position: relative;
-  z-index: 1;
 }
 
 @keyframes mediaIn {
@@ -159,7 +158,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 30;
+  z-index: 50; /* same level as iconBtn — always tappable */
   width: 44px;
   height: 66px;
   display: flex;
@@ -213,40 +212,10 @@
   background: rgba(0,0,0,0.45);
   transition: color 0.15s, border-color 0.15s;
   white-space: nowrap;
+  position: relative;
+  z-index: 50;
 }
 .openBtn:hover { color: var(--text); border-color: var(--border-bright); }
-
-/* ── Drag handle ────────────────────────────────────────────────────────── */
-/*
- * Placed as the LAST child of .container so it stacks above topBar (z 20),
- * navBtns (z 30), and mediaArea (z 1) in the natural DOM order.
- * z-index: 40 makes it explicit.
- *
- * Covers the TOP 70% of the viewport (bottom: 30%).
- * The bottom 30% is left free for:
- *   - native video controls strip
- *   - bottomBar
- *
- * pointer-events: auto  ← MUST be auto to receive touch events
- * background: transparent ← invisible
- * cursor: grab on mobile has no effect but is harmless
- *
- * Clicks are NOT blocked: we don't call e.preventDefault() on click,
- * so tapping the media (e.g. pausing a video) still works because the
- * browser fires the click on the element below after the touch sequence.
- *
- * Touch-action: none opts out of browser scroll/zoom during the gesture.
- */
-.dragHandle {
-  position: absolute;
-  inset: 0 0 30% 0;        /* top 70% of the container */
-  z-index: 40;
-  background: transparent;
-  touch-action: none;
-  pointer-events: auto;    /* must be auto — that was the bug */
-  /* Debug: uncomment to see the zone */
-  /* background: rgba(255, 0, 0, 0.15); */
-}
 
 /* ── Fullscreen ─────────────────────────────────────────────────────────── */
 :fullscreen .container { background: #000; }

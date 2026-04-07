@@ -61,9 +61,22 @@ export default function Lightbox() {
     }
   }
 
-  // ── Swipe handlers ─────────────────────────────────────────────────────
+  // ── Swipe handlers on the container ────────────────────────────────────
+  // We attach to the container and check:
+  //   1. The touch did NOT start on an interactive element (button, a, video)
+  //   2. The touch started in the top 70% of the screen (clear of video controls)
   const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY
+    // Skip if touching an interactive element — let those handle their own events
+    const tag = e.target.tagName
+    if (tag === 'BUTTON' || tag === 'A' || tag === 'VIDEO') return
+
+    const viewportH = window.innerHeight
+    const startY = e.touches[0].clientY
+
+    // Only start swipe gesture if touch is in top 70% of viewport
+    if (startY > viewportH * 0.70) return
+
+    touchStartY.current = startY
     touchStartX.current = e.touches[0].clientX
     isDragging.current  = false
     setDragY(0)
@@ -71,6 +84,7 @@ export default function Lightbox() {
 
   const handleTouchMove = (e) => {
     if (touchStartY.current === null) return
+
     const dy = e.touches[0].clientY - touchStartY.current
     const dx = e.touches[0].clientX - touchStartX.current
 
@@ -78,7 +92,6 @@ export default function Lightbox() {
       if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
         isDragging.current = true
       } else if (Math.abs(dx) > 10) {
-        // horizontal swipe — bail out
         touchStartY.current = null
         return
       }
@@ -111,6 +124,9 @@ export default function Lightbox() {
       className={styles.backdrop}
       style={{ opacity: dragOpacity }}
       onMouseMove={resetHideTimer}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div
         ref={containerRef}
@@ -192,27 +208,6 @@ export default function Lightbox() {
             Apri originale ↗
           </a>
         </div>
-
-        {/*
-         * ── Drag handle ────────────────────────────────────────────────
-         * Sits above everything (z-index 40) but only over the TOP portion
-         * of the screen (bottom edge = 30% from bottom, leaving the video
-         * controls strip + bottomBar free).
-         *
-         * pointer-events: auto  → receives touch events
-         * background: transparent → visually invisible
-         * No click handler → clicks fall through via the browser's normal
-         * hit-testing (the handle captures touch but not pointer clicks
-         * because we never call stopPropagation on click).
-         *
-         * For debugging, set background to rgba(255,0,0,0.15)
-         */}
-        <div
-          className={styles.dragHandle}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        />
       </div>
     </div>
   )
