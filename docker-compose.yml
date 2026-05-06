@@ -37,8 +37,8 @@ services:
         condition: service_healthy
     volumes:
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "${PORT:-8080}:80"
+    # ports:
+    #   - "${PORT:-8080}:80"
     networks:
       - redditvault
       - proxy
