@@ -1,32 +1,71 @@
 services:
   backend:
+    container_name: redditvault-backend
     image: undermix/redditvault-backend:latest
     restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${MEDIA_PATH:-./media}:/media:ro
     environment:
+      - TZ=Europe/Rome
       - MEDIA_ROOT=/media
       - PORT=3001
-    volumes:
-      - ${MEDIA_PATH:-./media}:/media:ro
     networks:
       - redditvault
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/health"]
+      test: [ "CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/health" ]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    # cpus: 1
+    # mem_limit: 1024mb
+    # # mem_reservation:
+    # memswap_limit: 1024mb
+    # # privileged:
+    # pull_policy:
+    # shm_size:
+    # user:
+
 
   frontend:
+    container_name: redditvault-frontend
     image: undermix/redditvault-frontend:latest
     restart: unless-stopped
-    ports:
-      - "${PORT:-8080}:80"
     depends_on:
       backend:
         condition: service_healthy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${PORT:-8080}:80"
     networks:
       - redditvault
+      - proxy
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.redditvault.rule=Host(`reddit.undermix.it`)'
+      - 'traefik.http.routers.redditvault.entrypoints=websecure'
+      - 'traefik.http.routers.redditvault.tls.certresolver=cf'
+      - 'traefik.http.services.redditvault.loadbalancer.server.port=80'
+      - 'traefik.docker.network=proxy'
+      - "homepage.group=Media"
+      - "homepage.name=RedditVault"
+      - "homepage.icon=reddit.png"
+      - "homepage.href=https://reddit.undermix.it"
+      - "homepage.description=RedditVault"
+      - "homepage.server=my-docker-host"
+    # cpus: 1
+    # mem_limit: 1024mb
+    # # mem_reservation:
+    # memswap_limit: 1024mb
+    # privileged:
+    # pull_policy:
+    # shm_size:
+    # user:
 
 networks:
   redditvault:
     driver: bridge
+  proxy:
+    external: true
